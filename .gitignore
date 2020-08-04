@@ -26,7 +26,18 @@
 *.a
 *.lib
 
-# Executables
-*.exe
-*.out
-*.app
+# Visual Studio files and folder
+.vs/
+**.sln
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user
+
+# My ignores
+SandboxSimulation/Debug/
+SandboxSimulation/Release/
+*.log
+*.pdb
+*.ipdb
+*.iobj
+*.ilk
