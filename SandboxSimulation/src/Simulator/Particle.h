@@ -22,14 +22,13 @@ struct Particle
 #define MAT_ID_STEAM     (uint8_t)3
 #define MAT_ID_WOOD      (uint8_t)4
 #define MAT_ID_FIRE      (uint8_t)5
-#define MAT_ID_SALT      (uint8_t)6
-#define MAT_ID_SMOKE     (uint8_t)7
-#define MAT_ID_EMBER     (uint8_t)8
-#define MAT_ID_GUNPOWDER (uint8_t)9
-#define MAT_ID_OIL       (uint8_t)10
-#define MAT_ID_LAVA      (uint8_t)11
-#define MAT_ID_STONE     (uint8_t)12
-#define MAT_ID_ACID      (uint8_t)13
+#define MAT_ID_SMOKE     (uint8_t)6
+#define MAT_ID_OIL       (uint8_t)7
+#define MAT_ID_GUNPOWDER (uint8_t)8
+#define MAT_ID_SALT      (uint8_t)9
+#define MAT_ID_LAVA      (uint8_t)10
+#define MAT_ID_STONE     (uint8_t)11
+#define MAT_ID_ACID      (uint8_t)12
 
 // Colors
 //#define MAT_COLOR_EMPTY     (uint32_t)0x000000
@@ -38,11 +37,10 @@ struct Particle
 #define MAT_COLOR_STEAM     (uint32_t)0xDCDCFA
 #define MAT_COLOR_WOOD      (uint32_t)0x3C2814
 #define MAT_COLOR_FIRE      (uint32_t)0x961400
-#define MAT_COLOR_SALT      (uint32_t)0xC8B4BE
-#define MAT_COLOR_SMOKE     (uint32_t)0x323232
-#define MAT_COLOR_EMBER     (uint32_t)0xC87814
-#define MAT_COLOR_GUNPOWDER (uint32_t)0x3C3C3C
+#define MAT_COLOR_SMOKE     (uint32_t)0x232323
 #define MAT_COLOR_OIL       (uint32_t)0x50463C
+#define MAT_COLOR_GUNPOWDER (uint32_t)0x3C3C3C
+#define MAT_COLOR_SALT      (uint32_t)0xC8B4BE
 #define MAT_COLOR_LAVA      (uint32_t)0xC83200
 #define MAT_COLOR_STONE     (uint32_t)0x786E78
 #define MAT_COLOR_ACID      (uint32_t)0x5AC83C

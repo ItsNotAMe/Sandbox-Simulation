@@ -5,7 +5,7 @@
 #include "Util.h"
 
 Simulator* Application::m_Sim = nullptr;
-int Application::m_ParticleSize = 20;
+int Application::m_ParticleSize = 1;
 int Application::m_BrushSize = 20 / m_ParticleSize, Application::m_CurrentBlock = 1;
 bool Application::m_SolidBrush = true;
 Random Application::m_Rand;
@@ -25,12 +25,12 @@ void Application::OnUpdate(float timestep)
 	if (Input::IsPressed(KEY_A)) // Swap block
 	{
 		m_CurrentBlock--;
-		m_CurrentBlock = Util::Clamp(m_CurrentBlock, 1.0f, 5.0f);
+		m_CurrentBlock = Util::Clamp(m_CurrentBlock, 1.0f, 8.0f);
 	}
 	if (Input::IsPressed(KEY_D)) // Swap block
 	{
 		m_CurrentBlock++;
-		m_CurrentBlock = Util::Clamp(m_CurrentBlock, 1.0f, 5.0f);
+		m_CurrentBlock = Util::Clamp(m_CurrentBlock, 1.0f, 8.0f);
 	}
 	if (Input::IsPressed(KEY_LEFT_BRACKET)) // Change brush size
 	{

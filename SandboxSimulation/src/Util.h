@@ -21,4 +21,6 @@ namespace Util {
 
 	float Clamp(float value, float min, float max);
 
+	float Lerp(float v0, float v1, float t);
+
 }
