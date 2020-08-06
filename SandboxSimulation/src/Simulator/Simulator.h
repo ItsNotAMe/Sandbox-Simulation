@@ -57,6 +57,7 @@ private:
 	void MoveSmoke(int x, int y);
 	void MoveOil(int x, int y);
 	void MoveGunpowder(int x, int y);
+	void MoveSalt(int x, int y);
 
 	bool MovePowder(int x, int y, uint8_t id, int fR, int sR, std::vector<uint8_t> cannotPassThrough);
 	bool MoveLiquid(int x, int y, uint8_t id, int fR, int sR, std::vector<uint8_t> cannotPassThrough);

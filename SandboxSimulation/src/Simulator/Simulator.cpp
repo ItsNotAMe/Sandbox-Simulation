@@ -85,7 +85,7 @@ void Simulator::OnUpdate(float timestep)
 	Simulator::OnUpdateThread(timestep, 1, 0, order);
 	Simulator::OnUpdateThread(timestep, 1, 1, order);*/
 
-	// TODO: fix the particles sometimes switching ids but not colors because of the threads (if its still a problem)
+	// TODO: fix the particles sometimes switching ids but not colors because of the threads (if its still a problem) + maybe do 0.001s betweem each start
 	std::thread t1(&Simulator::OnUpdateThread, this, timestep, 0, 0, order);
 	std::thread t2(&Simulator::OnUpdateThread, this, timestep, 2, 0, order);
 	std::thread t3(&Simulator::OnUpdateThread, this, timestep, 1, 0, order);
@@ -170,6 +170,7 @@ void Simulator::OnUpdateThread(float timestep, int fromX, int fromY, int order)
 							case MAT_ID_SMOKE: MoveSmoke(x, y); break;
 							case MAT_ID_OIL: MoveOil(x, y); break;
 							case MAT_ID_GUNPOWDER: MoveGunpowder(x, y); break;
+							case MAT_ID_SALT: MoveSalt(x, y); break;
 							default:
 								break;
 						}
@@ -188,11 +189,13 @@ Particle& Simulator::GetParticle(int x, int y)
 void Simulator::SetParticle(int x, int y, Particle& particle)
 {
 	m_Particles[x + y * m_Width] = particle;
+	m_Particles[x + y * m_Width].HasBeenUpdatedThisFrame = true;
 }
 
 void Simulator::SetParticle(int x, int y, Particle&& particle)
 {
 	m_Particles[x + y * m_Width] = particle;
+	m_Particles[x + y * m_Width].HasBeenUpdatedThisFrame = true;
 }
 
 void Simulator::SetParticle(int x, int y, uint8_t id)
@@ -253,6 +256,17 @@ void Simulator::SetParticle(int x, int y, uint8_t id)
 				particle.Color = red * 0x010000 + green * 0x000100 + blue;
 			}
 			break;
+		case MAT_ID_SALT:
+			particle.Id = MAT_ID_SALT;
+			//particle.Color = MAT_COLOR_SALT;
+			{
+				float r = (float)(rand.Rand(0, 2)) / 2.0f;
+				unsigned int red = Util::Lerp(0.9f, 1.0f, r) * 255.0f;
+				unsigned int green = Util::Lerp(0.8f, 0.85f, r) * 255.0f;
+				unsigned int blue = Util::Lerp(0.8f, 0.9f, r) * 255.0f;
+				particle.Color = red * 0x010000 + green * 0x000100 + blue;
+			}
+			break;
 		default:
 			break;
 	}
@@ -307,7 +321,7 @@ bool Simulator::IsSolid(int x, int y)
 	if (!InBounds(x, y))
 		return true;
 	uint8_t id = GetParticle(x, y).Id;
-	return id == MAT_ID_SAND || id == MAT_ID_WOOD || id == MAT_ID_GUNPOWDER;
+	return id == MAT_ID_SAND || id == MAT_ID_WOOD || id == MAT_ID_GUNPOWDER || id == MAT_ID_SALT;
 }
 
 bool Simulator::IsLiquid(int x, int y)
@@ -367,8 +381,11 @@ bool Simulator::IsInLiquid(int x, int y, int* lx, int* ly)
 		{
 			if (InBounds(x + j, y + i) && IsLiquid(x + j, y + i))
 			{
-				*lx = x + j;
-				*ly = y + i;
+				if (lx)
+				{
+					*lx = x + j;
+					*ly = y + i;
+				}
 				return true;
 			}
 		}
@@ -381,7 +398,7 @@ int Simulator::IsFlamable(int x, int y)
 	switch (GetParticle(x, y).Id)
 	{
 		case MAT_ID_WOOD:
-			return 60;
+			return 50;
 		case MAT_ID_OIL:
 			return 2;
 		case MAT_ID_GUNPOWDER:
@@ -429,6 +446,8 @@ void Simulator::InitParticle(int x, int y, float timestep)
 		}
 		break;
 	case MAT_ID_STEAM:
+		if (rand.Rand(0, max(10000 - particle.LifeTime * 200, 1)) == 0)
+			SetParticle(x, y, MAT_ID_WATER);
 		break;
 	case MAT_ID_WOOD:
 		break;
@@ -449,6 +468,8 @@ void Simulator::InitParticle(int x, int y, float timestep)
 		}
 		break;
 	case MAT_ID_SMOKE:
+		if (rand.Rand(0, max(10000 - particle.LifeTime * 200, 1)) == 0)
+			SetParticle(x, y, Particle());
 		break;
 	case MAT_ID_OIL:
 		if (rand.Rand(0, (int)(particle.LifeTime * 100.f)) % 20 == 0)
@@ -461,6 +482,15 @@ void Simulator::InitParticle(int x, int y, float timestep)
 		}
 		break;
 	case MAT_ID_GUNPOWDER:
+		break;
+	case MAT_ID_SALT:
+		if (IsInLiquid(x, y, nullptr, nullptr))
+		{
+			if (rand.Rand(0, 1000) == 0) {
+				SetParticle(x, y, Particle());
+				return;
+			}
+		}
 		break;
 	default:
 		break;
@@ -549,7 +579,6 @@ void Simulator::MoveSand(int x, int y)
 	MovePowder(x, y, MAT_ID_SAND, fR, sR, {});
 }
 
-// TODO: fix the water sometimes not counted for updating (happened after it falls from steam)
 void Simulator::MoveWater(int x, int y)
 {
 	int fallRate = max(10 / m_ParticleSize, 2);
@@ -584,10 +613,6 @@ void Simulator::MoveSteam(int x, int y)
 	int sR = spreadRate;
 
 	MoveGas(x, y, MAT_ID_STEAM, fR, sR, { MAT_ID_SMOKE });
-
-	// TODO: move to InitParticle
-	if (!IsEmpty(x, y + 1) && rand.Rand(0, 10000) == 0)
-		SetParticle(x, y, MAT_ID_WATER);
 }
 
 void Simulator::MoveWood(int x, int y)
@@ -623,7 +648,7 @@ void Simulator::MoveFire(int x, int y)
 			for (int i = rh; i > 0; i--) {
 				for (int j = r ? -spread : spread; r ? j < spread : j > -spread; r ? j++ : j--) {
 					int rx = j, ry = i;
-					if (IsEmpty(x + rx, y + ry)) {
+					if (IsEmpty(x + rx, y + ry) || (InBounds(x + rx, y + ry) && IsGas(x + rx, y + ry))) {
 						SetParticle(x + rx, y + ry, particle);
 						SetParticle(x, y, Particle());
 						break;
@@ -665,7 +690,10 @@ void Simulator::MoveFire(int x, int y)
 			if (!flamability)
 				continue;
 			if (rand.Rand(0, flamability) == 0)
+			{
 				SetParticle(x + j, y + i, MAT_ID_FIRE);
+				particle.LifeTime -= 0.3f;
+			}
 		}
 	}
 }
@@ -685,7 +713,7 @@ void Simulator::MoveSmoke(int x, int y)
 	int fR = fallRate;
 	int sR = spreadRate;
 
-	MoveGas(x, y, MAT_ID_SMOKE, fR, sR, {});
+	MoveGas(x, y, MAT_ID_SMOKE, fR, sR, { MAT_ID_FIRE });
 }
 
 void Simulator::MoveOil(int x, int y)
@@ -723,6 +751,25 @@ void Simulator::MoveGunpowder(int x, int y)
 	int fR = fallRate;
 
 	MovePowder(x, y, MAT_ID_GUNPOWDER, fR, sR, {});
+}
+
+void Simulator::MoveSalt(int x, int y)
+{
+	int fallRate = max(9 / m_ParticleSize, 2);
+	//int spreadRate = max(2 / m_ParticleSize, 1);
+	int spreadRate = 1;
+
+	if (rand.Rand(0, 100) < 50)
+		spreadRate = -spreadRate;
+
+	int lx, ly;
+	if (IsInLiquid(x, y, &lx, &ly))
+		fallRate = 1;
+
+	int sR = spreadRate;
+	int fR = fallRate;
+
+	MovePowder(x, y, MAT_ID_SALT, fR, sR, {});
 }
 
 bool Simulator::MovePowder(int x, int y, uint8_t id, int fR, int sR, std::vector<uint8_t> cannotPassThrough)
@@ -775,14 +822,13 @@ bool Simulator::MoveLiquid(int x, int y, uint8_t id, int fR, int sR, std::vector
 	int xTo = -1, yTo = -1;
 	for (int j = 0; sR > 0 ? j <= sR : j >= sR; sR > 0 ? j++ : j--)
 	{
-		if (j != 0 && (IsSolid(x + j, y) || IsGas(x + j, y) || IsParticle(x + j, y, cannotPassThrough)))
+		if (j != 0 && (IsSolid(x + j, y) || IsParticle(x + j, y, cannotPassThrough)))
 			break;
-
 		for (int i = 0; i <= fR; i++)
 		{
-			if ((i == 0 && j == 0) || IsParticle(x + j, y - i, id))
+			if ((i == 0 && j == 0) || IsParticle(x + j, y - i, id) || IsGas(x + j, y - i))
 				continue;
-			if (IsSolid(x + j, y - i) || IsGas(x + j, y - i) || IsParticle(x + j, y - i, cannotPassThrough))
+			if (IsSolid(x + j, y - i) || IsParticle(x + j, y - i, cannotPassThrough))
 				break;
 			if (j > (int)((float)(fR - i) / (float)fR) * (float)std::abs(sR))
 				break;
@@ -797,13 +843,13 @@ bool Simulator::MoveLiquid(int x, int y, uint8_t id, int fR, int sR, std::vector
 	}
 	for (int j = 0; sR > 0 ? j <= sR : j >= sR; sR > 0 ? j++ : j--)
 	{
-		if (j != 0 && (IsSolid(x - j, y) || IsGas(x - j, y) || IsParticle(x - j, y, cannotPassThrough)))
+		if (j != 0 && (IsSolid(x - j, y) || IsParticle(x - j, y, cannotPassThrough)))
 			break;
-		for (int i = y - yTo + 1; i <= fR; i++)
+		for (int i = 0; i <= fR; i++)
 		{
-			if ((i == 0 && j == 0) || IsParticle(x - j, y - i, id))
+			if ((i == 0 && j == 0) || IsGas(x - j, y - i) || IsParticle(x - j, y - i, id))
 				continue;
-			if (IsSolid(x - j, y - i) || IsGas(x - j, y - i) || IsParticle(x - j, y - i, cannotPassThrough))
+			if (IsSolid(x - j, y - i) || IsParticle(x - j, y - i, cannotPassThrough))
 				break;
 			if (j > (int)((float)(fR - i) / (float)fR) * (float)std::abs(sR))
 				break;

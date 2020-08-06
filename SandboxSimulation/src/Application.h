@@ -14,7 +14,7 @@ private:
 	static int m_ParticleSize;
 	static int m_BrushSize;
 	static int m_CurrentBlock;
-	static bool m_SolidBrush;
+	static bool m_SolidBrush, m_CircleBrush;
 
 	static Random m_Rand;
 };
